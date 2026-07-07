@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiny Browser Language Model</title>
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --panel: #171717;
+      --text: #f3f3f3;
+      --muted: #b8b8b8;
+      --line: #303030;
+
+      --blue: #4da3ff;
+      --purple: #b47cff;
+      --green: #70e070;
+      --yellow: #ffd95a;
+      --orange: #ff9b4d;
+      --red: #ff6b6b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(77, 163, 255, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 217, 90, 0.12), transparent 28%),
+        #090909;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 22px;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 16px;
+      background: rgba(23, 23, 23, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      letter-spacing: -0.05em;
+    }
+
+    .sub {
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 900px;
+      font-size: 16px;
+    }
+
+    .bro-box {
+      margin-top: 14px;
+      background: #050505;
+      border: 2px solid var(--yellow);
+      border-radius: 18px;
+      padding: 14px;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .bro-box strong {
+      color: var(--yellow);
+    }
+
+    .scale-box {
+      margin-top: 14px;
+      background: rgba(112, 224, 112, 0.08);
+      border: 2px solid var(--green);
+      border-radius: 18px;
+      padding: 14px;
+      font-size: 20px;
+      line-height: 1.45;
+      font-weight: 900;
+    }
+
+    .scale-box span {
+      color: var(--green);
+    }
+
+    .steps-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .steps-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mini-step {
+      border-radius: 16px;
+      padding: 12px;
+      background: #151515;
+      border: 2px solid var(--line);
+      min-height: 90px;
+    }
+
+    .mini-step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      font-weight: bold;
+      color: #111;
+      margin-bottom: 8px;
+    }
+
+    .mini-step strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 15px;
+    }
+
+    .mini-step span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .blue { border-color: var(--blue); }
+    .purple { border-color: var(--purple); }
+    .green { border-color: var(--green); }
+    .yellow { border-color: var(--yellow); }
+    .orange { border-color: var(--orange); }
+
+    .blue .num, .title-blue { background: var(--blue); }
+    .purple .num, .title-purple { background: var(--purple); }
+    .green .num, .title-green { background: var(--green); }
+    .yellow .num, .title-yellow { background: var(--yellow); }
+    .orange .num, .title-orange { background: var(--orange); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: rgba(23, 23, 23, 0.96);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+      border: 2px solid var(--line);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-title .big-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      color: #111;
+      font-weight: 900;
+      font-size: 22px;
+      flex: 0 0 auto;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .section-title p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      background: #070707;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 285px;
+      resize: vertical;
+      line-height: 1.45;
+      border-width: 2px;
+      border-color: rgba(77, 163, 255, 0.65);
+    }
+
+    input#prompt {
+      border-width: 2px;
+      border-color: rgba(255, 217, 90, 0.75);
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    textarea:focus,
+    input:focus,
+    select:focus {
+      border-color: white;
+    }
+
+    .settings-box {
+      margin-top: 12px;
+      border: 2px solid rgba(180, 124, 255, 0.75);
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(180, 124, 255, 0.08);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .actions-box {
+      margin-top: 12px;
+      border: 2px solid rgba(112, 224, 112, 0.75);
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(112, 224, 112, 0.07);
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.15s ease;
+      font-size: 15px;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .train-btn {
+      background: var(--green);
+      color: #111;
+    }
+
+    .generate-btn {
+      background: var(--yellow);
+      color: #111;
+    }
+
+    .predict-btn {
+      background: var(--orange);
+      color: #111;
+    }
+
+    .secondary {
+      background: #2d2d2d;
+      color: var(--text);
+      border: 1px solid #444;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      background: #0d0d0d;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    #output {
+      white-space: pre-wrap;
+      min-height: 285px;
+      background: #070707;
+      border: 2px solid rgba(255, 155, 77, 0.75);
+      border-radius: 14px;
+      padding: 14px;
+      line-height: 1.55;
+      font-size: 16px;
+    }
+
+    .status {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status.good {
+      color: var(--green);
+    }
+
+    .status.bad {
+      color: var(--red);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 9px;
+      line-height: 1.45;
+    }
+
+    .plain-help {
+      margin-top: 12px;
+      background: #050505;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .plain-help strong {
+      color: var(--text);
+    }
+
+    .training-data-note {
+      margin-bottom: 12px;
+      background: rgba(77, 163, 255, 0.10);
+      border: 2px solid var(--blue);
+      border-radius: 18px;
+      padding: 14px;
+      line-height: 1.45;
+      font-size: 16px;
+    }
+
+    .training-data-note strong {
+      color: var(--blue);
+    }
+
+    code {
+      background: #050505;
+      padding: 2px 5px;
+      border-radius: 5px;
+      border: 1px solid #333;
+    }
+
+    .tag {
+      display: inline-block;
+      color: #111;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+      font-size: 12px;
+    }
+
+    .quick-fix {
+      margin-top: 12px;
+      background: rgba(255, 217, 90, 0.09);
+      border: 2px solid var(--yellow);
+      border-radius: 18px;
+      padding: 12px;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .quick-fix strong {
+      color: var(--yellow);
+    }
+
+    .help-button {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      background: var(--yellow);
+      color: #111;
+      font-size: 30px;
+      font-weight: 900;
+      border: 3px solid #fff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      z-index: 50;
+      cursor: pointer;
+    }
+
+    .help-button:hover {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+
+    .help-callout {
+      position: fixed;
+      top: 20px;
+      right: 86px;
+      max-width: 245px;
+      background: #050505;
+      color: var(--text);
+      border: 2px solid var(--yellow);
+      border-radius: 16px;
+      padding: 10px 13px;
+      z-index: 49;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.38);
+      cursor: pointer;
+      line-height: 1.25;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .help-callout span {
+      color: var(--yellow);
+    }
+
+    .help-callout:hover {
+      transform: scale(1.02);
+    }
+
+    .help-callout::after {
+      content: "";
+      position: absolute;
+      top: 18px;
+      right: -10px;
+      width: 16px;
+      height: 16px;
+      background: #050505;
+      border-top: 2px solid var(--yellow);
+      border-right: 2px solid var(--yellow);
+      transform: rotate(45deg);
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      z-index: 100;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .help-modal {
+      width: min(760px, 100%);
+      margin: 40px auto;
+      background: #111;
+      border: 3px solid var(--yellow);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    }
+
+    .help-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .help-head h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+    }
+
+    .close-help {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: #2d2d2d;
+      color: #fff;
+      border: 1px solid #555;
+      font-size: 24px;
+      line-height: 1;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    .goal-box {
+      background: #050505;
+      border: 2px solid var(--yellow);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 14px;
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .goal-box strong {
+      color: var(--yellow);
+    }
+
+    .help-step {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 12px;
+      background: #050505;
+      border: 2px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .help-step-num {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #111;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .help-step h3 {
+      margin: 0 0 5px;
+      font-size: 19px;
+    }
+
+    .help-step p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .help-example {
+      background: rgba(112, 224, 112, 0.08);
+      border: 2px solid var(--green);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+
+    .help-example strong {
+      color: var(--green);
+    }
+
+    .help-bottom-note {
+      background: rgba(255, 107, 107, 0.08);
+      border: 2px solid var(--red);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .help-bottom-note strong {
+      color: var(--red);
+    }
+
+    @media (max-width: 700px) {
+      .help-button {
+        width: 48px;
+        height: 48px;
+        font-size: 26px;
+        top: 12px;
+        right: 12px;
+      }
+
+      .help-callout {
+        top: 64px;
+        right: 12px;
+        left: 12px;
+        max-width: none;
+        text-align: center;
+      }
+
+      .help-callout::after {
+        display: none;
+      }
+
+      .help-modal {
+        margin-top: 118px;
+      }
+
+      .help-step {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+    .mega-tip {
+      background: #050505;
+      border: 2px solid var(--purple);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .mega-tip strong {
+      color: var(--purple);
+    }
+
+    .mega-tip h3 {
+      color: var(--yellow);
+      margin: 18px 0 8px;
+      font-size: 20px;
+    }
+
+    .mega-tip h3:first-child {
+      margin-top: 0;
+    }
+
+    .mega-tip p {
+      margin: 0 0 10px;
+    }
+
+    .mega-tip ul,
+    .mega-tip ol {
+      margin: 8px 0 12px;
+      padding-left: 22px;
+    }
+
+    .mega-tip li {
+      margin-bottom: 6px;
+    }
+
+    .simple-quote {
+      background: #101010;
+      border-left: 4px solid var(--green);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      color: var(--text);
+    }
+
+  </style>
+</head>
+
+<body>
+  <button type="button" id="helpButton" class="help-button" onclick="openHelp()" title="Help">?</button>
+  <div class="help-callout" onclick="openHelp()" title="Open AI basics help">
+    Click and read me<br>
+    <span>to understand the basics of AI, my fellow Human.</span><br>
+    Read the bottom for examples.
+  </div>
+
+
+  <div id="helpBackdrop" class="modal-backdrop" onclick="backdropClose(event)">
+    <div class="help-modal">
+      <div class="help-head">
+        <div>
+          <h2>What is this thing?</h2>
+          <div class="sub">This is the simple help screen.</div>
+        </div>
+        <button class="close-help" onclick="closeHelp()" title="Close">×</button>
+      </div>
+
+      <div class="goal-box">
+        <strong>Main goal:</strong><br>
+        The goal is to show how a tiny language model works. You give it example text.
+        It learns little word patterns from that text. Then you give it a starting line,
+        and it tries to continue the sentence.
+        <br><br>
+        It is basically: <strong>feed it words → train it → give it a start → it guesses more words.</strong>
+      </div>
+
+      <div class="help-step blue">
+        <div class="help-step-num title-blue">!</div>
+        <div>
+          <h3>The blue box is the toy model's pretend internet</h3>
+          <p>
+            On the main screen, just think: <strong>blue box = internet</strong>.
+            But inside that pretend internet, imagine all the stuff AI can learn patterns from:
+            books, conversations, sentences, code, lyrics, articles, examples, and training data.
+            <br><br>
+            When the blue box is empty, the tiny model has nothing because you have not given it words or sentences yet.
+            It only starts learning once you start filling it with stuff.
+          </p>
+        </div>
+      </div>
+
+      <div class="help-step blue">
+        <div class="help-step-num title-blue">1</div>
+        <div>
+          <h3>Blue box = food for the model</h3>
+          <p>
+            Paste text into the big blue box. This is what the model learns from.
+            More text gives it more patterns. Tiny text means tiny brain.
+          </p>
+        </div>
+      </div>
+
+      <div class="help-step purple">
+        <div class="help-step-num title-purple">2</div>
+        <div>
+          <h3>Purple box = settings</h3>
+          <p>
+            You can ignore this at first. Leave it on 2 words. That means the model looks at
+            the last 2 words and guesses what word usually comes next.
+          </p>
+        </div>
+      </div>
+
+      <div class="help-step green">
+        <div class="help-step-num title-green">3</div>
+        <div>
+          <h3>Green button = make it learn</h3>
+          <p>
+            After you paste or change the blue text, click Train Model.
+            This is like saying: “read this and remember the word patterns.”
+          </p>
+        </div>
+      </div>
+
+      <div class="help-step yellow">
+        <div class="help-step-num title-yellow">4</div>
+        <div>
+          <h3>Yellow box = starting words</h3>
+          <p>
+            Type the start of a sentence here. Example: “The dog”.
+            The model uses those words as the starting point.
+          </p>
+        </div>
+      </div>
+
+      <div class="help-step orange">
+        <div class="help-step-num title-orange">5</div>
+        <div>
+          <h3>Orange box = answer comes out here</h3>
+          <p>
+            Click Train + Generate. The model will spit out words in the orange box.
+            It might sound weird because it is not truly thinking. It is only guessing from patterns.
+          </p>
+        </div>
+      </div>
+
+      <div class="help-example">
+        <strong>Dead simple example:</strong><br>
+        Blue box says: <code>The dog ran home. The dog ate food.</code><br>
+        Yellow prompt says: <code>The dog</code><br>
+        Output might say: <code>The dog ran home.</code> or <code>The dog ate food.</code><br><br>
+        That is the whole point. It learns what usually comes after words.
+      </div>
+
+      <div class="help-bottom-note">
+        <strong>Important tiny-brain detail:</strong><br>
+        Also, <code>human</code> and <code>humans</code> are treated as different words.
+        The tiny model does not know they mean almost the same thing.
+        <br><br>
+        When this page says it is <strong>not a big AI brain like ChatGPT</strong>, it means:
+        this tiny model does not understand meaning, grammar, emotion, logic, or real-world facts.
+        It only counts word patterns from the blue box and guesses what word might come next.
+      </div>
+
+      <div class="mega-tip">
+        <h3>Extra tip: how this toy connects to ChatGPT</h3>
+
+        <p>
+          <strong>Bro version:</strong> ChatGPT is basically the mega version of this little
+          <strong>Language Pattern</strong> toy.
+        </p>
+
+        <p>This toy model does this:</p>
+        <div class="simple-quote">
+          “I saw <code>human can</code> before, so maybe the next word is <code>fly</code>.”
+        </div>
+
+        <p>ChatGPT does a much more advanced version of this:</p>
+        <div class="simple-quote">
+          “Given everything in this conversation, what text should come next?”
+        </div>
+
+        <p>
+          But instead of remembering simple word pairs, ChatGPT has a huge neural network with billions of learned
+          number-values inside it. Those numbers are called <strong>weights</strong>.
+          Think of weights like tiny dials that get adjusted during training.
+        </p>
+
+        <h3>AI music works in a similar way</h3>
+        <p>
+          Think of AI generative music apps the same way.
+        </p>
+
+        <p>This toy asks:</p>
+        <div class="simple-quote">
+          “What word usually comes next after these words?”
+        </div>
+
+        <p>An AI music model is doing a similar idea, but with sound:</p>
+        <div class="simple-quote">
+          “What sound usually comes next after this sound?”<br>
+          “What guitar note usually comes next after this guitar note?”<br>
+          “What drum hit usually comes next after this beat?”<br>
+          “What chord usually comes next after this chord?”<br>
+          “What vocal texture usually comes next after this vocal line?”
+        </div>
+
+        <p>
+          So when an AI music app creates music, it is not sitting there like a human with a guitar thinking,
+          “I feel sad, so I’ll write this beautiful chord.”
+        </p>
+
+        <p>
+          It has learned huge patterns from music/audio, like:
+        </p>
+
+        <ul>
+          <li>kick usually lands here</li>
+          <li>snare usually lands there</li>
+          <li>bass often follows the chord</li>
+          <li>a vocal line often rises before a chorus</li>
+          <li>a drop usually comes after a build-up</li>
+          <li>sad acoustic songs often use softer notes and space</li>
+          <li>house music often repeats grooves and slowly changes layers</li>
+        </ul>
+
+        <div class="simple-quote">
+          Music AI version: “Given all the sound so far, what sound should come next?”
+        </div>
+
+        <p>
+          Text AI predicts text patterns. Music AI predicts sound patterns.
+          Bigger models just do it at a much crazier level.
+        </p>
+
+
+        <h3>Now how they trained language, simple version</h3>
+
+        <h3>1. Feed it a stupid amount of text</h3>
+        <p>
+          They train a base model on huge amounts of text written by humans:
+          books, websites, code, articles, conversations, and other text sources.
+        </p>
+
+        <p>The basic training game is:</p>
+        <ol>
+          <li>Hide the next word/token.</li>
+          <li>Ask the model to guess it.</li>
+          <li>If it guesses wrong, adjust the internal number-dials slightly.</li>
+          <li>Do that billions or trillions of times.</li>
+        </ol>
+
+        <div class="simple-quote">
+          Example: <code>The dog jumped over the ___</code><br>
+          It guesses: <code>fence</code><br>
+          Maybe the real answer was: <code>gate</code><br>
+          So it slightly adjusts its internal dials.
+        </div>
+
+        <p>
+          Again and again and again. That is the base language model.
+        </p>
+
+        <h3>2. Then they teach it to follow instructions</h3>
+        <p>
+          A raw base model is not automatically a good assistant.
+          It might ramble, complete your sentence weirdly, or answer in a useless way.
+        </p>
+
+        <p>
+          So humans give example prompts and write good answers.
+          The model gets trained on examples like:
+        </p>
+
+        <div class="simple-quote">
+          User asks question → assistant gives helpful answer.
+        </div>
+
+        <h3>3. Then humans compare answers</h3>
+        <p>
+          They show human reviewers multiple answers from the model and ask:
+        </p>
+
+        <div class="simple-quote">
+          Which answer is better?
+        </div>
+
+        <p>Example:</p>
+        <ul>
+          <li>User asks: <code>Explain tax deductions simply.</code></li>
+          <li>Answer A is confusing.</li>
+          <li>Answer B is clear.</li>
+          <li>Human says B is better.</li>
+        </ul>
+
+        <p>
+          They collect heaps of these comparisons.
+        </p>
+
+        <h3>4. Then they train a reward model</h3>
+        <p>
+          This part is wild. They train another model to predict what humans would prefer.
+        </p>
+
+        <p>
+          So now the system has something like a taste judge:
+        </p>
+
+        <div class="simple-quote">
+          “This answer is probably better.”<br>
+          “This answer is probably worse.”
+        </div>
+
+        <h3>5. Then they use RLHF</h3>
+        <p>
+          RLHF means <strong>Reinforcement Learning from Human Feedback</strong>.
+        </p>
+
+        <p>Simple version:</p>
+        <ul>
+          <li>Reward the model when it gives answers humans prefer.</li>
+          <li>Push it away from answers humans dislike.</li>
+        </ul>
+
+        <h3>So what is ChatGPT “thinking”?</h3>
+        <p>
+          It is not thinking like a human with feelings and a soul sitting inside the computer.
+          It is more like a massive prediction engine.
+        </p>
+
+        <p>
+          But because it was trained on so much text, code, explanations, arguments, questions,
+          answers, stories, maths, and human conversation, the next-token prediction becomes crazy powerful.
+        </p>
+
+        <p>
+          At small scale, like this HTML toy file app you're using right now, it can say cooked stuff like:
+        </p>
+
+        <div class="simple-quote">
+          human truck sky human can roll
+        </div>
+
+        <p>
+          At huge scale, it starts learning patterns like:
+        </p>
+
+        <ul>
+          <li>how grammar works</li>
+          <li>how code works</li>
+          <li>how questions work</li>
+          <li>how explanations work</li>
+          <li>how humans usually reason</li>
+          <li>how conversations flow</li>
+          <li>how tone works</li>
+          <li>how <code>dog</code> and <code>dogs</code> are connected</li>
+          <li>how <code>human</code> and <code>humans</code> are related</li>
+        </ul>
+
+        <p>
+          That is why this HTML toy is not a big AI brain like ChatGPT.
+        </p>
+
+        <div class="simple-quote">
+          This HTML toy = a calculator with a notebook.<br>
+          ChatGPT = a giant trained neural network running on serious computer hardware.
+        </div>
+
+        <h3>Dumbest possible summary</h3>
+        <ol>
+          <li>Read internet-scale text.</li>
+          <li>Guess missing words/tokens.</li>
+          <li>Get corrected.</li>
+          <li>Do that an insane number of times.</li>
+          <li>Then humans teach it how to answer nicely.</li>
+          <li>Then humans rank its answers.</li>
+          <li>Then it gets tuned toward the answers humans prefer.</li>
+        </ol>
+
+        <p>
+          So this little <strong>Word Pattern / What Usually Comes Next</strong> toy model is the baby version of the first idea.
+        </p>
+
+        <p>
+          ChatGPT is that idea scaled up to an insane level, with human training layered on top.
+        </p>
+
+        <h3>Same idea, different AI types</h3>
+
+        <ul>
+          <li>
+            <strong>Language</strong> - What usually comes next after this word, sentence, question, or conversation?
+            <div class="simple-quote">
+              Example:<br>
+              User types: <code>The dog jumped over the</code>
+              <br><br>
+              It predicts:<br>
+              <code>fence</code>, <code>gate</code>, <code>wall</code>, or whatever usually comes next in writing.
+            </div>
+          </li>
+
+          <li>
+            <strong>Music</strong> - What usually comes next after this sound, chord, drum hit, vocal line, or moment in the song?
+            <div class="simple-quote">
+              Example:<br>
+              The song has a build-up, rising synth, faster drums, and tension.
+              <br><br>
+              It predicts:<br>
+              drop, bass hit, kick drum, wider chorus, or a vocal hook.
+            </div>
+          </li>
+
+          <li>
+            <strong>Coding</strong> - What usually comes next after this code, function, file, error message, or programming pattern?
+            <div class="simple-quote">
+              Example:<br>
+              Code says: <code>function add(a, b) { return</code>
+              <br><br>
+              It predicts:<br>
+              <code>a + b;</code>
+            </div>
+          </li>
+
+          <li>
+            <strong>Images</strong> - What pixels, shapes, colours, shadows, faces, objects, or background usually belong here?
+            <div class="simple-quote">
+              Example:<br>
+              Prompt says: <code>a dog wearing sunglasses on a beach</code>
+              <br><br>
+              It predicts:<br>
+              dog shape, fur, sunglasses over the eyes, sand, sky, ocean, sunlight, shadows.
+            </div>
+          </li>
+
+          <li>
+            <strong>Video</strong> - What frame, movement, camera angle, or action usually comes next?
+            <div class="simple-quote">
+              Example:<br>
+              A video shows a person bending their knees before jumping.
+              <br><br>
+              It predicts:<br>
+              body moves upward, feet leave ground, arms move, then the person lands.
+            </div>
+          </li>
+
+          <li>
+            <strong>Voice / Speech</strong> - What sound, word, tone, or voice pattern usually comes next?
+            <div class="simple-quote">
+              Example:<br>
+              Audio says: <code>Hello, how are...</code>
+              <br><br>
+              It predicts:<br>
+              <code>you</code>, because that sound/phrase usually finishes that way.
+            </div>
+          </li>
+
+          <li>
+            <strong>Robotics</strong> - What action should usually happen next in this situation?
+            <div class="simple-quote">
+              Example:<br>
+              robot sees cup on table, hand is nearby
+              <br><br>
+              It predicts:<br>
+              move hand toward cup, grip cup, lift cup
+            </div>
+          </li>
+
+          <li>
+            <strong>Recommendations</strong> - What would this person probably want, click, watch, buy, or listen to next?
+            <div class="simple-quote">
+              Example:<br>
+              Someone keeps watching Hilux videos, mowing business videos, and motorbike videos.
+              <br><br>
+              It predicts:<br>
+              show them another ute video, mower setup video, tool review, or motorbike clip.
+            </div>
+          </li>
+
+          <li>
+            <strong>Gaming AI</strong> - What move, attack, dodge, path, or decision usually makes sense next?
+            <div class="simple-quote">
+              Example:<br>
+              Enemy sees player nearby, enemy has low health, player is aiming at them.
+              <br><br>
+              It predicts:<br>
+              run behind cover, dodge, reload, attack, or retreat.
+            </div>
+          </li>
+
+          <li>
+            <strong>Medical AI</strong> - What condition, scan pattern, or warning sign does this usually look like?
+            <div class="simple-quote">
+              Example:<br>
+              A scan has a certain shadow, shape, size, and location that doctors have labelled before.
+              <br><br>
+              It predicts:<br>
+              this pattern may match a known condition, or it may need a doctor to check it.
+            </div>
+          </li>
+
+          <li>
+            <strong>Fraud detection AI</strong> - Does this behaviour look normal, wrong, fake, risky, or suspicious?
+            <div class="simple-quote">
+              Example:<br>
+              Card is used in Sydney, then 10 minutes later it is used overseas.
+              <br><br>
+              It predicts:<br>
+              suspicious pattern, possible fraud, block transaction or ask for verification.
+            </div>
+          </li>
+
+          <li>
+            <strong>Detection AI</strong> - What category does this thing belong in, and does anything look off?
+            <div class="simple-quote">
+              Example:<br>
+              Camera sees an object on the road.
+              <br><br>
+              It predicts:<br>
+              person, dog, car, rubbish bag, traffic cone, or “unknown object”.
+            </div>
+          </li>
+        </ul>
+
+        <ul>
+          <li><strong>Blah</strong> - What usually comes after this part</li>
+          <li><strong>Blah</strong> - What usually comes next after this</li>
+          <li><strong>So on and so on</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <header>
+      <h1>Tiny Browser Language Model</h1>
+      <div class="sub">
+        A small language model demo in one HTML file. It learns from text you paste in, then guesses what words should come next.
+        It runs inside your browser only. No internet. No API.
+      </div>
+
+      <div class="scale-box">
+        <span>Tiny model + tiny text = dumb output</span><br>
+        Bigger model + huge data + training = smarter output.<br>
+        This app is the tiny model version.
+      </div>
+
+      <div class="bro-box">
+        <strong>Super simple version:</strong>
+        Blue box = feed the little robot text. Yellow box = tell it how to start.
+        Click <strong>Train + Generate</strong>. Orange box = where its answer comes out.
+      </div>
+
+      <div class="quick-fix">
+        <strong>Do this:</strong>
+        1. Write/paste text in the blue box.
+        2. Type a few starting words in the yellow box.
+        3. Click <strong>Train + Generate</strong>.
+        That is it. You do not have to separately press Train first anymore.
+      </div>
+    </header>
+
+    <section class="steps-strip">
+      <div class="mini-step blue">
+        <div class="num">1</div>
+        <strong>Paste text</strong>
+        <span>This is the little robot's food.</span>
+      </div>
+
+      <div class="mini-step purple">
+        <div class="num">2</div>
+        <strong>Settings</strong>
+        <span>Leave these alone at first.</span>
+      </div>
+
+      <div class="mini-step green">
+        <div class="num">3</div>
+        <strong>Train</strong>
+        <span>Click this so it learns patterns.</span>
+      </div>
+
+      <div class="mini-step yellow">
+        <div class="num">4</div>
+        <strong>Prompt</strong>
+        <span>Give it the first few words.</span>
+      </div>
+
+      <div class="mini-step orange">
+        <div class="num">5</div>
+        <strong>Output</strong>
+        <span>This is what it makes.</span>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card blue">
+        <div class="section-title">
+          <span class="big-num title-blue">1</span>
+          <div>
+            <h2>Training Text</h2>
+            <p>Paste a bunch of text here. The model copies patterns from this.</p>
+          </div>
+        </div>
+
+        <div class="training-data-note">
+          <strong>Pretend this blue box is the internet.</strong>
+          <br><br>
+          When it is empty, the tiny model has nothing. It does not magically know stuff.
+          It only starts learning once you fill this blue box with words and sentences.
+        </div>
+
+        <label for="corpus">Blue box: what the model learns from</label>
+        <textarea id="corpus">The old truck rolled down the dirt road at sunset.
+The dog sat in the passenger seat like she owned the place.
+Every job had a rhythm. Load the gear, start the mower, cut the grass, clean the edges, blow the path.
+Some days were easy. Some days felt like another Tuesday.
+The fire brigade came late again, and nobody said much after that.
+The crowd wore black and white vans and called themselves different.
+But everyone looked the same under the festival lights.
+A small machine can learn patterns, but it does not understand the world.
+It only guesses what word might come next.
+Still, with enough text, even a tiny model can sound strangely alive.</textarea>
+
+        <div class="settings-box">
+          <div class="section-title">
+            <span class="big-num title-purple">2</span>
+            <div>
+              <h2>Settings</h2>
+              <p>Leave these as-is until you get the hang of it.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="order">Context size</label>
+              <select id="order">
+                <option value="1">1 word - more random</option>
+                <option value="2" selected>2 words - best basic</option>
+                <option value="3">3 words - needs more text</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="temperature">Randomness</label>
+              <input id="temperature" type="number" value="0.9" min="0.1" max="3" step="0.1">
+            </div>
+
+            <div>
+              <label for="topK">Choice limit</label>
+              <input id="topK" type="number" value="8" min="1" max="50" step="1">
+            </div>
+
+            <div>
+              <label for="maxWords">Max words</label>
+              <input id="maxWords" type="number" value="80" min="5" max="500" step="5">
+            </div>
+          </div>
+
+          <div class="plain-help">
+            <strong>Plain English:</strong><br>
+            Context size = how many previous words it looks at.<br>
+            Randomness = low means safer, high means crazier.<br>
+            Max words = how long the answer can be.
+          </div>
+        </div>
+
+        <div class="actions-box">
+          <div class="section-title">
+            <span class="big-num title-green">3</span>
+            <div>
+              <h2>Train It</h2>
+              <p>Click this after changing the blue text.</p>
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button class="train-btn" onclick="trainModel()">3. Train Model</button>
+            <button class="secondary" onclick="loadSimpleDemo()">Use Super Simple Demo</button>
+            <button class="secondary" onclick="useWordsFromText()">Use Words From My Text</button>
+            <button class="secondary" onclick="loadDemo()">Reload Bigger Demo</button>
+            <button class="secondary" onclick="clearAll()">Clear</button>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <strong id="wordCount">0</strong>
+              <span>words learned</span>
+            </div>
+            <div class="stat">
+              <strong id="stateCount">0</strong>
+              <span>patterns learned</span>
+            </div>
+            <div class="stat">
+              <strong id="vocabCount">0</strong>
+              <span>unique words</span>
+            </div>
+          </div>
+
+          <div id="status" class="status">Model not trained yet.</div>
+        </div>
+      </section>
+
+      <section class="card yellow">
+        <div class="section-title">
+          <span class="big-num title-yellow">4</span>
+          <div>
+            <h2>Prompt</h2>
+            <p>Type the first few words. The model continues from there.</p>
+          </div>
+        </div>
+
+        <label for="prompt">Yellow box: the starting words</label>
+        <input id="prompt" value="The old truck" />
+
+        <div class="buttons">
+          <button class="generate-btn" onclick="generateText()">Train + Generate</button>
+          <button class="predict-btn" onclick="predictNext()">Predict Next Word</button>
+          <button class="secondary" onclick="copyOutput()">Copy Output</button>
+        </div>
+
+        <div class="plain-help">
+          <span class="tag title-yellow">Prompt</span>
+          Example: type <code>The dog</code>, then click <strong>Train + Generate</strong>. It trains first, then continues from your words.
+        </div>
+
+        <br />
+
+        <div class="section-title">
+          <span class="big-num title-orange">5</span>
+          <div>
+            <h2>Output</h2>
+            <p>The generated text appears here.</p>
+          </div>
+        </div>
+
+        <label>Orange box: what the model spits out</label>
+        <div id="output">Paste text in the blue box, type starting words in the yellow box, then click Train + Generate.</div>
+
+        <div class="plain-help">
+          <strong>Important:</strong> This is not a big AI brain like ChatGPT. It is a tiny pattern machine.
+          It does not understand meaning. It just copies the rhythm of the text you trained it on.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Tiny Browser Language Model
+      ---------------------------
+      This is a simple word-level n-gram model.
+
+      Example:
+      If context size is 2, it learns patterns like:
+      "the old" -> "truck"
+      "old truck" -> "rolled"
+      "truck rolled" -> "down"
+
+      Then it generates by repeatedly choosing a likely next word.
+    */
+
+    let model = new Map();
+    let starts = [];
+    let vocabulary = new Set();
+    let trainedOrder = 2;
+    let lastTrainedText = "";
+
+    const biggerDemoText = document.getElementById("corpus").value;
+
+    const simpleDemoText =
+`The dog ran down the road.
+The dog jumped in the truck.
+The truck rolled down the road.
+The dog looked out the window.
+The road went past the old house.
+The truck stopped near the old house.`;
+
+    function tokenize(text) {
+      return text
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/\s+/g, " ")
+        .trim()
+        .match(/[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?|[.,!?;:()"-]/g) || [];
+    }
+
+    function detokenize(tokens) {
+      let text = tokens.join(" ");
+
+      text = text.replace(/\s+([.,!?;:])/g, "$1");
+      text = text.replace(/\(\s+/g, "(").replace(/\s+\)/g, ")");
+      text = text.replace(/"\s+/g, '"').replace(/\s+"/g, '"');
+      text = text.replace(/^./, c => c.toUpperCase());
+
+      return text;
+    }
+
+    function keyFrom(tokens) {
+      return tokens.join("\u0001");
+    }
+
+    function addNextWord(contextTokens, nextToken) {
+      const key = keyFrom(contextTokens);
+
+      if (!model.has(key)) {
+        model.set(key, new Map());
+      }
+
+      const options = model.get(key);
+      options.set(nextToken, (options.get(nextToken) || 0) + 1);
+    }
+
+    function trainModel() {
+      const corpus = document.getElementById("corpus").value;
+      const order = Number(document.getElementById("order").value);
+      const tokens = tokenize(corpus);
+      lastTrainedText = corpus;
+
+      model = new Map();
+      starts = [];
+      vocabulary = new Set(tokens.map(t => t.toLowerCase()));
+      trainedOrder = order;
+
+      if (tokens.length <= order) {
+        setStatus("Not enough text. Add more words or lower the context size.", false);
+        return;
+      }
+
+      for (let i = 0; i <= tokens.length - order - 1; i++) {
+        const context = tokens.slice(i, i + order).map(t => t.toLowerCase());
+        const next = tokens[i + order];
+
+        addNextWord(context, next);
+
+        if (i === 0 || [".", "!", "?"].includes(tokens[i - 1])) {
+          starts.push(context);
+        }
+      }
+
+      document.getElementById("wordCount").textContent = tokens.length;
+      document.getElementById("stateCount").textContent = model.size;
+      document.getElementById("vocabCount").textContent = vocabulary.size;
+
+      setStatus("Green light: model trained. Now use the yellow prompt box.", true);
+      document.getElementById("output").textContent = "Trained. Now click Generate Text on the right.";
+    }
+
+    function setStatus(message, good) {
+      const el = document.getElementById("status");
+      el.textContent = message;
+      el.className = "status " + (good ? "good" : "bad");
+    }
+
+    function weightedChoice(optionsMap, temperature = 1, topK = 8) {
+      let entries = Array.from(optionsMap.entries());
+
+      entries.sort((a, b) => b[1] - a[1]);
+      entries = entries.slice(0, Math.max(1, topK));
+
+      const adjusted = entries.map(([word, count]) => {
+        return [word, Math.pow(count, 1 / Math.max(0.1, temperature))];
+      });
+
+      const total = adjusted.reduce((sum, item) => sum + item[1], 0);
+      let r = Math.random() * total;
+
+      for (const [word, weight] of adjusted) {
+        r -= weight;
+        if (r <= 0) return word;
+      }
+
+      return adjusted[adjusted.length - 1][0];
+    }
+
+    function getContextFromPrompt(promptTokens) {
+      const lowered = promptTokens.map(t => t.toLowerCase());
+
+      if (lowered.length >= trainedOrder) {
+        return lowered.slice(-trainedOrder);
+      }
+
+      if (starts.length > 0) {
+        const randomStart = starts[Math.floor(Math.random() * starts.length)];
+        return randomStart.slice(0, trainedOrder - lowered.length).concat(lowered);
+      }
+
+      return lowered;
+    }
+
+    function fallbackContext() {
+      if (starts.length > 0) {
+        return starts[Math.floor(Math.random() * starts.length)];
+      }
+
+      const keys = Array.from(model.keys());
+      if (keys.length === 0) return [];
+      return keys[Math.floor(Math.random() * keys.length)].split("\u0001");
+    }
+
+    function generateText() {
+      // Idiot-proof behaviour:
+      // Every time the user clicks this button, train on the current blue box first.
+      // That way the model never accidentally uses old/demo text.
+      trainModel();
+      if (model.size === 0) return;
+
+      const prompt = document.getElementById("prompt").value.trim();
+      const temperature = Number(document.getElementById("temperature").value);
+      const topK = Number(document.getElementById("topK").value);
+      const maxWords = Number(document.getElementById("maxWords").value);
+
+      let outputTokens = tokenize(prompt);
+      let context = outputTokens.length
+        ? getContextFromPrompt(outputTokens)
+        : fallbackContext();
+
+      let note = "";
+
+      if (outputTokens.length === 0) {
+        outputTokens = context.slice();
+        note = "No prompt was typed, so I picked a random starting point from the blue text.\n\n";
+      }
+
+      // If the exact prompt context is not known, try a softer fallback using the last prompt word.
+      if (!model.get(keyFrom(context)) && outputTokens.length > 0) {
+        const lastWord = outputTokens[outputTokens.length - 1].toLowerCase();
+        const keys = Array.from(model.keys());
+
+        let matchingKey = keys.find(k => k.split("\u0001").includes(lastWord));
+
+        if (matchingKey) {
+          context = matchingKey.split("\u0001");
+          note =
+            "Tiny brain note: I could not find your exact prompt pattern, so I used the closest pattern containing \"" +
+            lastWord +
+            "\".\n\n";
+        } else {
+          context = fallbackContext();
+          note =
+            "Tiny brain note: I could not find your prompt words in the blue text, so I started from a random learned pattern instead.\n\n";
+        }
+      }
+
+      for (let i = 0; i < maxWords; i++) {
+        let key = keyFrom(context);
+        let options = model.get(key);
+
+        if (!options) {
+          context = fallbackContext();
+          key = keyFrom(context);
+          options = model.get(key);
+          if (!options) break;
+        }
+
+        const next = weightedChoice(options, temperature, topK);
+        outputTokens.push(next);
+
+        if (
+          outputTokens.length > 20 &&
+          [".", "!", "?"].includes(next) &&
+          Math.random() < 0.28
+        ) {
+          break;
+        }
+
+        context = outputTokens
+          .slice(-trainedOrder)
+          .map(t => t.toLowerCase());
+      }
+
+      document.getElementById("output").textContent = note + detokenize(outputTokens);
+    }
+
+    function predictNext() {
+      // Also auto-train here so predictions always use the current blue text.
+      trainModel();
+      if (model.size === 0) return;
+
+      const prompt = document.getElementById("prompt").value.trim();
+      const promptTokens = tokenize(prompt);
+
+      if (promptTokens.length === 0) {
+        document.getElementById("output").textContent = "Type something in the yellow prompt box first.";
+        return;
+      }
+
+      let context = getContextFromPrompt(promptTokens);
+      let options = model.get(keyFrom(context));
+      let note = "";
+
+      if (!options) {
+        const lastWord = promptTokens[promptTokens.length - 1].toLowerCase();
+        const keys = Array.from(model.keys());
+        const matchingKey = keys.find(k => k.split("\u0001").includes(lastWord));
+
+        if (matchingKey) {
+          context = matchingKey.split("\u0001");
+          options = model.get(matchingKey);
+          note =
+            "No exact match for your full prompt. Closest pattern I found using \"" +
+            lastWord +
+            "\":\n\n";
+        } else {
+          document.getElementById("output").textContent =
+            "I cannot find those prompt words in the blue training text.\n\nTry clicking: Use Words From My Text\n\nOr type a word that definitely appears in the blue box.";
+          return;
+        }
+      }
+
+      const sorted = Array.from(options.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      const total = sorted.reduce((sum, item) => sum + item[1], 0);
+
+      document.getElementById("output").textContent =
+        note +
+        "Next-word guesses for: \"" + detokenize(context) + "\"\n\n" +
+        sorted
+          .map(([word, count], i) => {
+            const pct = ((count / total) * 100).toFixed(1);
+            return `${i + 1}. ${word}  (${pct}%)`;
+          })
+          .join("\n");
+    }
+
+    async function copyOutput() {
+      const text = document.getElementById("output").textContent;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus("Output copied.", true);
+      } catch (err) {
+        setStatus("Copy failed. You can manually highlight the output.", false);
+      }
+    }
+
+    function loadSimpleDemo() {
+      document.getElementById("corpus").value = simpleDemoText;
+      document.getElementById("prompt").value = "The dog";
+      document.getElementById("order").value = "2";
+      document.getElementById("temperature").value = "0.8";
+      document.getElementById("topK").value = "4";
+      document.getElementById("maxWords").value = "45";
+      document.getElementById("output").textContent =
+        "Simple demo loaded. Click the green Train Model button.";
+      setStatus("Simple demo loaded. Click Train Model.", true);
+    }
+
+    function loadDemo() {
+      document.getElementById("corpus").value = biggerDemoText;
+      document.getElementById("prompt").value = "The old truck";
+      document.getElementById("output").textContent =
+        "Bigger demo loaded. Click the green Train Model button.";
+      setStatus("Bigger demo loaded. Click Train Model.", true);
+    }
+
+    function clearAll() {
+      document.getElementById("corpus").value = "";
+      document.getElementById("prompt").value = "";
+      document.getElementById("output").textContent = "";
+      document.getElementById("wordCount").textContent = "0";
+      document.getElementById("stateCount").textContent = "0";
+      document.getElementById("vocabCount").textContent = "0";
+      model = new Map();
+      starts = [];
+      vocabulary = new Set();
+      setStatus("Cleared.", true);
+    }
+
+
+    function useWordsFromText() {
+      const tokens = tokenize(document.getElementById("corpus").value)
+        .filter(t => ![".", ",", "!", "?", ";", ":", "(", ")", '"', "-"].includes(t));
+
+      if (tokens.length < 2) {
+        document.getElementById("output").textContent =
+          "Not enough words in the blue box yet. Add more training text first.";
+        return;
+      }
+
+      const order = Number(document.getElementById("order").value);
+      const start = Math.max(0, Math.min(tokens.length - order, Math.floor(tokens.length / 3)));
+      const promptWords = tokens.slice(start, start + order).join(" ");
+
+      document.getElementById("prompt").value = promptWords;
+      document.getElementById("output").textContent =
+        "I picked starting words from your blue text: \"" + promptWords + "\"\n\nNow click Train + Generate.";
+    }
+
+    function openHelp() {
+      document.getElementById("helpBackdrop").classList.add("show");
+    }
+
+    function closeHelp() {
+      document.getElementById("helpBackdrop").classList.remove("show");
+    }
+
+    function backdropClose(event) {
+      if (event.target.id === "helpBackdrop") {
+        closeHelp();
+      }
+    }
+
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Escape") {
+        closeHelp();
+      }
+    });
+
+    trainModel();
+  </script>
+</body>
+</html>
